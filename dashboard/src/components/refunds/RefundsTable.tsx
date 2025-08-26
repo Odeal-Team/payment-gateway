@@ -51,6 +51,12 @@ const RefundsTable: React.FC<RefundsTableProps> = ({
   };
 
   const formatAmount = (amount: number, currency: string) => {
+    // TRY için ₺ sembolü kullan
+    if (currency === 'TRY') {
+      return `₺${amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    
+    // Diğer para birimleri için standart format
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,

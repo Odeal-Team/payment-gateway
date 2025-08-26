@@ -36,10 +36,16 @@ import {
 interface DashboardStats {
   totalPayments: number;
   totalAmount: number;
+  tryPaymentAmount?: number;
+  eurPaymentAmount?: number;
+  usdPaymentAmount?: number;
   successRate: number;
   pendingPayments: number;
   totalRefunds: number;
   refundAmount: number;
+  tryRefundAmount?: number;
+  eurRefundAmount?: number;
+  usdRefundAmount?: number;
   totalCustomers: number;
   totalDisputes: number;
   pendingDisputes: number;
@@ -101,7 +107,7 @@ const DashboardPage: React.FC = () => {
     {
       title: 'Total Payments',
       value: stats.totalPayments.toLocaleString(),
-      subtitle: `${stats.totalAmount.toLocaleString()} total volume`,
+      subtitle: `₺${(stats.tryPaymentAmount || 0).toLocaleString()} | €${(stats.eurPaymentAmount || 0).toLocaleString()} | $${(stats.usdPaymentAmount || 0).toLocaleString()}`,
       color: 'primary'
     },
     {
@@ -113,7 +119,7 @@ const DashboardPage: React.FC = () => {
     {
       title: 'Total Refunds',
       value: stats.totalRefunds.toLocaleString(),
-      subtitle: `$${stats.refundAmount.toLocaleString()} refunded`,
+      subtitle: `₺${(stats.tryRefundAmount || 0).toLocaleString()} | €${(stats.eurRefundAmount || 0).toLocaleString()} | $${(stats.usdRefundAmount || 0).toLocaleString()}`,
       color: 'warning'
     },
     {
@@ -179,7 +185,29 @@ const DashboardPage: React.FC = () => {
             }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 <Chip icon={<CheckCircle sx={{ color: 'success.main !important' }} />} label={`${stats.totalPayments} processed`} variant="outlined" color="success" />
-                <Chip icon={<Paid sx={{ color: 'primary.main !important' }} />} label={`${stats.totalAmount.toLocaleString()} total volume`} variant="outlined" color="primary" />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Chip 
+                    icon={<Paid sx={{ color: 'primary.main !important' }} />} 
+                    label={`₺${(stats.tryPaymentAmount || 0).toLocaleString()} total volume`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                  <Chip 
+                    icon={<Paid sx={{ color: 'primary.main !important' }} />} 
+                    label={`€${(stats.eurPaymentAmount || 0).toLocaleString()} total volume`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                  <Chip 
+                    icon={<Paid sx={{ color: 'primary.main !important' }} />} 
+                    label={`$${(stats.usdPaymentAmount || 0).toLocaleString()} total volume`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                </Box>
                 <Chip icon={<HourglassBottom sx={{ color: 'warning.main !important' }} />} label={`${stats.pendingPayments} pending`} variant="outlined" color="warning" />
               </Box>
               <Box sx={{ mt: 2 }}>
@@ -223,7 +251,29 @@ const DashboardPage: React.FC = () => {
             }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 <Chip icon={<ReplayCircleFilled sx={{ color: 'warning.main !important' }} />} label={`${stats.totalRefunds} refunds`} variant="outlined" color="warning" />
-                <Chip icon={<ReceiptLong sx={{ color: 'primary.main !important' }} />} label={`${stats.refundAmount.toLocaleString()} refunded`} variant="outlined" color="primary" />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Chip 
+                    icon={<ReceiptLong sx={{ color: 'primary.main !important' }} />} 
+                    label={`₺${(stats.tryRefundAmount || 0).toLocaleString()} refunded`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                  <Chip 
+                    icon={<ReceiptLong sx={{ color: 'primary.main !important' }} />} 
+                    label={`€${(stats.eurRefundAmount || 0).toLocaleString()} refunded`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                  <Chip 
+                    icon={<ReceiptLong sx={{ color: 'primary.main !important' }} />} 
+                    label={`$${(stats.usdRefundAmount || 0).toLocaleString()} refunded`} 
+                    variant="outlined" 
+                    color="primary" 
+                    size="small"
+                  />
+                </Box>
                 <Chip icon={<HourglassBottom sx={{ color: 'info.main !important' }} />} label={`avg 2-3 business days`} variant="outlined" color="info" />
               </Box>
               <Box sx={{ mt: 2 }}>

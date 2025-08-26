@@ -75,6 +75,19 @@ public class MerchantDashboardController {
                 .mapToDouble(p -> p.getAmount().doubleValue())
                 .sum();
             
+            // Payment tutarlarını para birimine göre ayrı ayrı hesapla
+            Map<String, Double> paymentAmountsByCurrency = allPayments.stream()
+                .filter(p -> p.getAmount() != null && p.getCurrency() != null)
+                .collect(Collectors.groupingBy(
+                    p -> p.getCurrency(),
+                    Collectors.summingDouble(p -> p.getAmount().doubleValue())
+                ));
+            
+            // TRY, EUR, USD için varsayılan değerler
+            double tryPaymentAmount = paymentAmountsByCurrency.getOrDefault("TRY", 0.0);
+            double eurPaymentAmount = paymentAmountsByCurrency.getOrDefault("EUR", 0.0);
+            double usdPaymentAmount = paymentAmountsByCurrency.getOrDefault("USD", 0.0);
+            
             long completedPayments = allPayments.stream()
                 .filter(p -> "COMPLETED".equals(p.getStatus().name()))
                 .count();
@@ -98,6 +111,19 @@ public class MerchantDashboardController {
                 .mapToDouble(r -> r.getAmount().doubleValue())
                 .sum();
             
+            // Refund tutarlarını para birimine göre ayrı ayrı hesapla
+            Map<String, Double> refundAmountsByCurrency = allRefunds.stream()
+                .filter(r -> "COMPLETED".equals(r.getStatus().name()) && r.getAmount() != null && r.getCurrency() != null)
+                .collect(Collectors.groupingBy(
+                    r -> r.getCurrency(),
+                    Collectors.summingDouble(r -> r.getAmount().doubleValue())
+                ));
+            
+            // TRY, EUR, USD için varsayılan değerler
+            double tryRefundAmount = refundAmountsByCurrency.getOrDefault("TRY", 0.0);
+            double eurRefundAmount = refundAmountsByCurrency.getOrDefault("EUR", 0.0);
+            double usdRefundAmount = refundAmountsByCurrency.getOrDefault("USD", 0.0);
+            
             // Dispute stats
             long totalDisputes = allDisputes.size();
             long pendingDisputes = allDisputes.stream()
@@ -112,10 +138,16 @@ public class MerchantDashboardController {
             Map<String, Object> stats = new java.util.HashMap<>();
             stats.put("totalPayments", totalPayments);
             stats.put("totalAmount", totalAmount);
+            stats.put("tryPaymentAmount", tryPaymentAmount);
+            stats.put("eurPaymentAmount", eurPaymentAmount);
+            stats.put("usdPaymentAmount", usdPaymentAmount);
             stats.put("successRate", successRate);
             stats.put("pendingPayments", pendingPayments);
             stats.put("totalRefunds", totalRefunds);
             stats.put("refundAmount", refundAmount);
+            stats.put("tryRefundAmount", tryRefundAmount);
+            stats.put("eurRefundAmount", eurRefundAmount);
+            stats.put("usdRefundAmount", usdRefundAmount);
             stats.put("totalCustomers", totalCustomers);
             stats.put("totalDisputes", totalDisputes);
             stats.put("pendingDisputes", pendingDisputes);
@@ -133,10 +165,16 @@ public class MerchantDashboardController {
             Map<String, Object> emptyStats = new java.util.HashMap<>();
             emptyStats.put("totalPayments", 0);
             emptyStats.put("totalAmount", 0.0);
+            emptyStats.put("tryPaymentAmount", 0.0);
+            emptyStats.put("eurPaymentAmount", 0.0);
+            emptyStats.put("usdPaymentAmount", 0.0);
             emptyStats.put("successRate", 0.0);
             emptyStats.put("pendingPayments", 0);
             emptyStats.put("totalRefunds", 0);
             emptyStats.put("refundAmount", 0.0);
+            emptyStats.put("tryRefundAmount", 0.0);
+            emptyStats.put("eurRefundAmount", 0.0);
+            emptyStats.put("usdRefundAmount", 0.0);
             emptyStats.put("totalCustomers", 0);
             emptyStats.put("totalDisputes", 0);
             emptyStats.put("pendingDisputes", 0);
@@ -319,10 +357,23 @@ public class MerchantDashboardController {
                 ));
             disputeData.put("reasonBreakdown", reasonBreakdown);
             
-            // Toplam dispute tutarı
-            BigDecimal totalDisputeAmount = allDisputes.stream()
-                .filter(d -> d.getAmount() != null)
-                .map(DisputeResponse::getAmount)
+            // Toplam dispute tutarı - para birimine göre ayrı ayrı hesapla
+            Map<String, BigDecimal> totalDisputeAmountsByCurrency = allDisputes.stream()
+                .filter(d -> d.getAmount() != null && d.getCurrency() != null)
+                .collect(Collectors.groupingBy(
+                    DisputeResponse::getCurrency,
+                    Collectors.reducing(BigDecimal.ZERO, DisputeResponse::getAmount, BigDecimal::add)
+                ));
+            
+            // TRY, EUR, USD için varsayılan değerler ekle (0 olanlar için)
+            totalDisputeAmountsByCurrency.putIfAbsent("TRY", BigDecimal.ZERO);
+            totalDisputeAmountsByCurrency.putIfAbsent("EUR", BigDecimal.ZERO);
+            totalDisputeAmountsByCurrency.putIfAbsent("USD", BigDecimal.ZERO);
+            
+            disputeData.put("totalDisputeAmountsByCurrency", totalDisputeAmountsByCurrency);
+            
+            // Eski totalDisputeAmount'u da ekle (geriye uyumluluk için)
+            BigDecimal totalDisputeAmount = totalDisputeAmountsByCurrency.values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
             disputeData.put("totalDisputeAmount", totalDisputeAmount);
             

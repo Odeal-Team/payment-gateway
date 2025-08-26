@@ -418,11 +418,27 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
                   <Typography variant="h6" color="text.secondary">
                     Toplam Tutar
                   </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    ₺{stats.totalDisputeAmount?.toLocaleString() || '0'}
-                  </Typography>
+                  <Box>
+                    {stats.totalDisputeAmountsByCurrency ? (
+                      <>
+                        <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>
+                          ₺{stats.totalDisputeAmountsByCurrency.TRY?.toLocaleString() || '0'}
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>
+                          €{stats.totalDisputeAmountsByCurrency.EUR?.toLocaleString() || '0'}
+                        </Typography>
+                        <Typography variant="h5" fontWeight="bold" color="primary.main">
+                          ${stats.totalDisputeAmountsByCurrency.USD?.toLocaleString() || '0'}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography variant="h4" fontWeight="bold">
+                        ₺{stats.totalDisputeAmount?.toLocaleString() || '0'}
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
-                <ArrowDownward color="error" fontSize="large" />
+                <ArrowDownward color="primary" fontSize="large" />
               </Box>
             </CardContent>
           </Card>
@@ -474,11 +490,31 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
                   <Typography variant="h6" color="text.secondary">
                     Toplam Tutar
                   </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    {disputes.reduce((sum, d) => sum + (d.amount || 0), 0).toLocaleString()}
-                  </Typography>
+                  <Box>
+                    {(() => {
+                      const amountsByCurrency = disputes.reduce((acc, d) => {
+                        const currency = d.currency || 'TRY';
+                        acc[currency] = (acc[currency] || 0) + (d.amount || 0);
+                        return acc;
+                      }, {} as Record<string, number>);
+                      
+                      return (
+                        <>
+                          <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>
+                            ₺{amountsByCurrency.TRY?.toLocaleString() || '0'}
+                          </Typography>
+                          <Typography variant="h5" fontWeight="bold" color="primary.main" sx={{ mb: 0.5 }}>
+                            €{amountsByCurrency.EUR?.toLocaleString() || '0'}
+                          </Typography>
+                          <Typography variant="h5" fontWeight="bold" color="primary.main">
+                            ${amountsByCurrency.USD?.toLocaleString() || '0'}
+                          </Typography>
+                        </>
+                      );
+                    })()}
+                  </Box>
                 </Box>
-                <ArrowDownward color="error" fontSize="large" />
+                <ArrowDownward color="primary" fontSize="large" />
               </Box>
             </CardContent>
           </Card>
@@ -504,7 +540,7 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
       {/* Disputes Table */}
       <Paper>
         {/* Debug Info */}
-        <Box sx={{ p: 2, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ p: 2, bgcolor: 'grey.100', borderBottom: 1, borderColor: 'grey.300' }}>
           <Typography variant="body2" color="text.secondary">
             Debug: Merchant: {authState.user?.merchantId} | Disputes count: {disputes.length} | Loading: {loading.toString()} | Error: {error || 'none'}
           </Typography>

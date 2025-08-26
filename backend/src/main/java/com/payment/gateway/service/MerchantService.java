@@ -8,6 +8,7 @@ import com.payment.gateway.dto.ApiKeyResponse;
 import com.payment.gateway.model.Merchant;
 import com.payment.gateway.model.AuditLog;
 import com.payment.gateway.repository.MerchantRepository;
+import com.payment.gateway.service.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

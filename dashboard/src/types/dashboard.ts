@@ -19,6 +19,7 @@ export interface DisputeStats {
   lostDisputes: number;
   winRate: number;
   totalDisputeAmount: number;
+  totalDisputeAmountsByCurrency?: Record<string, number>;
   urgentDisputes: number;
   recentDisputes: number;
   reasonBreakdown: Record<string, number>;
