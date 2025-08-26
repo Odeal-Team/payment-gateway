@@ -55,12 +55,13 @@ const getCurrentMerchantId = (): string => {
     const userStr = localStorage.getItem('auth_user');
     if (userStr) {
       const user = JSON.parse(userStr);
-      return user.merchantId || 'TEST_MERCHANT';
+      return user.merchantId;
     }
-    return 'TEST_MERCHANT';
+    console.error('Merchant ID not found in localStorage (auth_user missing).');
+    return '';
   } catch (error) {
     console.error('Error getting merchant ID:', error);
-    return 'TEST_MERCHANT';
+    return '';
   }
 };
 

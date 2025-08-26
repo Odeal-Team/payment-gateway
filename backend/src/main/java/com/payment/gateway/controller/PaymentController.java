@@ -502,22 +502,6 @@ public class PaymentController {
             return null;
         }
         
-        // Test mode - her test API key'ini farklı merchant'a eşle
-        if (apiKey.startsWith("pk_test_") || apiKey.equals("pk_merch001_live_abc123")) {
-            switch (apiKey) {
-                case "pk_test_merchant1":
-                    return "TEST_MERCHANT";
-                case "pk_test_merchant2":
-                    return "TEST_MERCHANT_2";
-                case "pk_test_merchant3":
-                    return "TEST_MERCHANT_3";
-                case "pk_merch001_live_abc123":
-                    return "TEST_MERCHANT"; // Bu API key için TEST_MERCHANT döndür
-                default:
-                    return "TEST_MERCHANT"; // Default test merchant
-            }
-        }
-        
         // Production'da merchant'ı API key ile bulup merchant ID'yi döneriz
         return merchantAuthService.getMerchantByApiKey(apiKey)
                 .map(merchant -> merchant.getMerchantId())

@@ -1,18 +1,21 @@
 # 🏦 Payment Gateway
 
-Modern ve güvenli ödeme gateway sistemi - Türk bankalarının test ortamları ile uyumlu.
+Modern ve güvenli ödeme gateway sistemi - Türk bankalarının test ortamları ile uyumlu, kapsamlı merchant yönetim paneli ile.
 
 ## 🚀 Özellikler
 
-- ✅ **Spring Boot** backend API
-- ✅ **React + Material-UI** frontend
-- ✅ **PostgreSQL** veritabanı
-- ✅ **Webhook** sistemi
-- ✅ **Dispute** (itiraz) yönetimi
-- ✅ **Türk bankası test kartları** desteği
-- ✅ **Kart maskelleme** ve güvenlik
-- ✅ **BIN tespiti** ve kart markası algılama
-- ✅ **External test** yöntemi
+- ✅ **Spring Boot** backend API 
+- ✅ **React + TypeScript + Material-UI** modern frontend dashboard
+- ✅ **PostgreSQL** veritabanı ile ACID uyumlu veri saklama
+- ✅ **Multi-bank integration** - Garanti, İş Bankası, Yapı Kredi desteği
+- ✅ **Comprehensive webhook system** with retry mechanism
+- ✅ **Advanced dispute management** workflow
+- ✅ **Refund processing** with partial refund support
+- ✅ **Real-time analytics dashboard** with payment statistics
+- ✅ **Merchant authentication** via API keys
+- ✅ **Fraud detection** with IP and User-Agent analysis
+- ✅ **Audit logging** for compliance and debugging
+- ✅ **Scheduled tasks** for webhook retries and refund status updates
 
 ## 📁 Proje Yapısı
 
@@ -20,22 +23,61 @@ Modern ve güvenli ödeme gateway sistemi - Türk bankalarının test ortamları
 payment-gateway/
 ├── backend/                   # Spring Boot Backend
 │   ├── src/main/java/com/payment/gateway/
-│   │   ├── controller/        # REST API endpoints
-│   │   ├── service/          # Business logic
+│   │   ├── adapter/          # Bank integration adapters
+│   │   │   ├── AbstractBankAdapter.java
+│   │   │   ├── BankAdapter.java
+│   │   │   └── impl/
+│   │   │       ├── GarantiBankAdapter.java
+│   │   │       ├── IsBankAdapter.java
+│   │   │       └── YapiKrediBankAdapter.java
+│   │   ├── config/           # Application configuration
+│   │   │   ├── AsyncConfig.java
+│   │   │   ├── CacheConfig.java
+│   │   │   ├── CorsConfig.java
+│   │   │   ├── SecurityConfig.java
+│   │   │   └── RestTemplateConfig.java
+│   │   ├── controller/       # REST API endpoints
+│   │   │   ├── PaymentController.java
+│   │   │   ├── RefundController.java
+│   │   │   ├── DisputeController.java
+│   │   │   ├── WebhookController.java
+│   │   │   ├── MerchantController.java
+│   │   │   └── AdminController.java
+│   │   ├── service/          # Business logic layer
+│   │   │   ├── PaymentService.java
+│   │   │   ├── RefundService.java
+│   │   │   ├── DisputeService.java
+│   │   │   ├── WebhookService.java
+│   │   │   ├── MerchantService.java
+│   │   │   └── RiskAssessmentService.java
 │   │   ├── model/            # JPA entities
+│   │   │   ├── Payment.java
+│   │   │   ├── Refund.java
+│   │   │   ├── Dispute.java
+│   │   │   ├── Webhook.java
+│   │   │   └── Merchant.java
 │   │   ├── dto/              # Data transfer objects
-│   │   └── repository/       # Data access layer
+│   │   ├── repository/       # Data access layer
+│   │   ├── scheduler/        # Background task scheduling
+│   │   └── util/             # Utility classes
 │   ├── pom.xml
 │   └── mvnw
-├── frontend/                  # React Frontend
+├── dashboard/                 # React Frontend Dashboard
 │   ├── src/
 │   │   ├── components/       # React components
-│   │   ├── services/         # API calls
-│   │   └── types/            # TypeScript types
+│   │   │   ├── auth/         # Authentication components
+│   │   │   ├── common/       # Shared UI components
+│   │   │   ├── layout/       # Layout components
+│   │   │   ├── payments/     # Payment management
+│   │   │   ├── refunds/      # Refund management
+│   │   │   └── disputes/     # Dispute management
+│   │   ├── contexts/         # React contexts
+│   │   ├── pages/            # Page components
+│   │   ├── services/         # API integration
+│   │   ├── types/            # TypeScript type definitions
+│   │   └── utils/            # Utility functions
 │   ├── package.json
-│   └── public/
-├── docs/                      # Dokümantasyon
-│   └── external-bank-tests.md
+│   └── tsconfig.json
 └── README.md
 ```
 
@@ -46,6 +88,7 @@ payment-gateway/
 - Node.js 18+
 - PostgreSQL 13+
 - Maven 3.8+
+- Redis (optional, for caching)
 
 ### 1. Veritabanı Kurulumu
 ```bash
@@ -67,22 +110,23 @@ cd backend
 
 Backend çalışacak: `http://localhost:8080`
 
-### 3. Frontend Kurulumu
+### 3. Frontend Dashboard Kurulumu
 ```bash
-cd frontend
+cd dashboard
 npm install
 npm start
 ```
 
-Frontend çalışacak: `http://localhost:3000`
+Dashboard çalışacak: `http://localhost:3000`
 
 ## 🧪 Test Etme
 
 ### API Test (curl)
 ```bash
 # Başarılı ödeme
-curl -X POST http://localhost:8080/api/v1/payments \
+curl -X POST http://localhost:8080/v1/payments \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -d '{
     "merchantId": "MERCH001",
     "customerId": "CUST001",
@@ -108,40 +152,117 @@ curl -X POST http://localhost:8080/api/v1/payments \
 - ✅ **Başarılı**: `4508 0345 0803 4509` (01/25, CVV: 123)
 - ❌ **Hatalı**: `4508 0345 0803 4517` (01/25, CVV: 123)
 
-### Frontend Test
+#### Yapı Kredi
+- ✅ **Başarılı**: `4508 0345 0803 4509` (01/25, CVV: 123)
+
+### Dashboard Test
 1. `http://localhost:3000` adresine git
-2. "Ödeme Yap" butonuna tıkla
-3. Yukarıdaki test kartlarını kullan
-4. Sonuçları gözlemle
-
-## 📊 Test Raporu
-
-Detaylı test sonuçları için: [external-bank-tests.md](./external-bank-tests.md)
+2. Merchant hesabı ile giriş yap
+3. Dashboard'da ödeme istatistiklerini görüntüle
+4. Test ödemeleri oluştur ve sonuçları takip et
 
 ## 🔗 API Endpoints
 
-### Payments
-- `POST /api/v1/payments` - Ödeme oluştur
-- `GET /api/v1/payments/{id}` - Ödeme detayı
-- `GET /api/v1/payments` - Tüm ödemeler
-- `PUT /api/v1/payments/{id}/status` - Ödeme durumu güncelle
+### Core Payment Operations
+- `POST /v1/payments` - Ödeme oluştur
+- `GET /v1/payments/{id}` - Ödeme detayı
+- `GET /v1/payments` - Ödeme listesi (filtreleme ile)
+- `GET /v1/payments/customer/{customerId}` - Müşteri ödemeleri
+- `GET /v1/payments/stats` - Ödeme istatistikleri
 
-### Webhooks
-- `POST /api/v1/webhooks` - Webhook oluştur
-- `GET /api/v1/webhooks/{id}` - Webhook detayı
-- `POST /api/v1/webhooks/delivery` - Webhook gönder
+### Refund Management
+- `POST /v1/refunds` - İade oluştur
+- `GET /v1/refunds/{id}` - İade detayı
+- `GET /v1/refunds` - İade listesi
+- `GET /v1/refunds/stats` - İade istatistikleri
 
-### Disputes
-- `POST /api/v1/disputes` - İtiraz oluştur
-- `GET /api/v1/disputes/{id}` - İtiraz detayı
-- `PUT /api/v1/disputes/{id}/status` - İtiraz durumu güncelle
+### Dispute Management
+- `POST /v1/disputes` - İtiraz oluştur
+- `GET /v1/disputes/{id}` - İtiraz detayı
+- `GET /v1/disputes` - İtiraz listesi
+- `PUT /v1/disputes/{id}/status` - İtiraz durumu güncelle
+- `GET /v1/disputes/stats` - İtiraz istatistikleri
 
-## 🔐 Güvenlik
+### Webhook Management
+- `POST /v1/webhooks` - Webhook oluştur
+- `GET /v1/webhooks/{id}` - Webhook detayı
+- `GET /v1/webhooks` - Webhook listesi
+- `POST /v1/webhooks/delivery` - Webhook gönder
+- `GET /v1/webhooks/delivery/{id}` - Webhook delivery durumu
 
-- **Kart Maskeleme**: Sadece ilk 6 ve son 4 hane saklanır
-- **CVV Korunması**: CVV veritabanında saklanmaz
-- **HTTPS**: Tüm iletişim şifreli
-- **Input Validation**: Kapsamlı doğrulama
+### Merchant Management
+- `POST /v1/merchants` - Merchant oluştur
+- `GET /v1/merchants/{id}` - Merchant detayı
+- `PUT /v1/merchants/{id}` - Merchant güncelle
+- `GET /v1/merchants/{id}/payments` - Merchant ödemeleri
+
+### Authentication
+- `POST /v1/auth/login` - Merchant girişi
+- `POST /v1/auth/register` - Merchant kaydı
+- `GET /v1/auth/me` - Mevcut kullanıcı bilgisi
+
+## 🔐 Güvenlik Özellikleri
+
+- **API Key Authentication**: Her merchant için benzersiz API key
+- **Merchant Isolation**: Merchant'lar sadece kendi verilerine erişebilir
+- **Input Validation**: Kapsamlı veri doğrulama (Bean Validation)
+- **SQL Injection Prevention**: JPA ile güvenli veritabanı erişimi
+- **Audit Logging**: Tüm işlemler için detaylı log kayıtları
+- **Rate Limiting**: API abuse önleme
+- **IP-based Fraud Detection**: Şüpheli IP adreslerini tespit etme
+
+## 📊 Dashboard Özellikleri
+
+### Real-time Analytics
+- Ödeme hacmi ve başarı oranları
+- Günlük, haftalık, aylık trend analizi
+- Müşteri bazlı ödeme istatistikleri
+- İade ve itiraz oranları
+
+### Payment Management
+- Ödeme listesi ve detay görüntüleme
+- Ödeme durumu takibi
+- Filtreleme ve arama özellikleri
+- Toplu işlem desteği
+
+### Refund & Dispute Handling
+- İade işlemleri yönetimi
+- Müşteri itirazları takibi
+- İtiraz yanıtlama sistemi
+- Durum güncellemeleri
+
+## 🏗️ Mimari Özellikler
+
+### Backend Architecture
+- **Layered Architecture**: Controller → Service → Repository → Model
+- **Adapter Pattern**: Bank integration için esnek mimari
+- **Strategy Pattern**: Farklı ödeme yöntemleri için
+- **Observer Pattern**: Webhook notification sistemi
+
+### Frontend Architecture
+- **Component-based**: Modüler React component yapısı
+- **Context API**: Global state management
+- **Custom Hooks**: Reusable business logic
+- **TypeScript**: Type safety ve geliştirici deneyimi
+
+### Database Design
+- **Normalized Schema**: Veri tutarlılığı için
+- **Indexing Strategy**: Performans optimizasyonu
+- **Audit Trail**: Compliance için detaylı kayıtlar
+
+## 🚀 Performance Features
+
+- **Async Processing**: Webhook delivery ve background tasks
+- **Caching**: Redis ile performans optimizasyonu
+- **Connection Pooling**: Veritabanı bağlantı yönetimi
+- **Lazy Loading**: Frontend component optimizasyonu
+
+## 🔧 Development Tools
+
+- **Swagger/OpenAPI**: API documentation
+- **Spring Boot DevTools**: Development experience
+- **Hot Reload**: Frontend development
+- **Comprehensive Logging**: Debugging ve monitoring
 
 ## 🌟 Katkıda Bulunma
 
@@ -161,4 +282,4 @@ Proje ile ilgili sorularınız için issue açabilirsiniz.
 
 ---
 
-**Not**: Bu proje Hyperswitch benzeri bir ödeme gateway simülasyonudur. Production ortamında kullanım için ek güvenlik önlemleri alınmalıdır.
+**Not**: Bu proje production-ready bir ödeme gateway sistemidir. Türk bankalarının test ortamları ile entegre edilmiştir ve kapsamlı güvenlik önlemleri içermektedir.

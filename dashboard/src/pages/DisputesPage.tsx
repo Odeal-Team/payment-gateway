@@ -460,7 +460,7 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
       {/* Disputes Table */}
       <Paper>
         {/* Debug Info */}
-        <Box sx={{ p: 2, bgcolor: 'grey.100', borderBottom: 1, borderColor: 'grey.300' }}>
+        <Box sx={{ p: 2, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
           <Typography variant="body2" color="text.secondary">
             Debug: Merchant: {authState.user?.merchantId} | Disputes count: {disputes.length} | Loading: {loading.toString()} | Error: {error || 'none'}
           </Typography>

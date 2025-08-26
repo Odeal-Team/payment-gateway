@@ -129,37 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response: LoginResponse = await authAPI.login(credentials);
       
       if (response.success && response.user && response.token && response.apiKey) {
-        // Test API key'ler için özel durum
-        if (response.apiKey.startsWith('pk_test_')) {
-          // Test key'ler için test user oluştur ve hemen authenticated yap
-          const testUser = {
-            id: 'test-user',
-            merchantId: 'TEST_MERCHANT',
-            merchantName: 'Test Merchant',
-            email: 'test@merchant.com',
-            role: 'ADMIN' as const,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          
-          // Test key'ler için localStorage'a test verileri kaydet
-          localStorage.setItem('auth_token', 'test-token');
-          localStorage.setItem('auth_user', JSON.stringify(testUser));
-          localStorage.setItem('auth_api_key', response.apiKey);
-
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: {
-              user: testUser,
-              token: 'test-token',
-              apiKey: response.apiKey
-            }
-          });
-          
-          return true;
-        }
-
-        // Normal production key'ler için standart flow
+        // Store authentication data
         localStorage.setItem('auth_token', response.token);
         localStorage.setItem('auth_user', JSON.stringify(response.user));
         localStorage.setItem('auth_api_key', response.apiKey);

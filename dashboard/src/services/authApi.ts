@@ -19,7 +19,6 @@ export const authAPI = {
       return response.data;
       
     } catch (error: any) {
-      console.error('Login error:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Login failed'
@@ -27,17 +26,4 @@ export const authAPI = {
     }
   },
 
-  // Logout (if needed for backend cleanup)
-  logout: async (): Promise<void> => {
-    // TODO: Implement logout endpoint if needed
-    // await authApiClient.post('/v1/auth/logout');
-  },
-
-  // Get current user profile
-  getProfile: async (token: string) => {
-    // TODO: Implement get profile endpoint
-    // return await authApiClient.get('/v1/auth/profile', {
-    //   headers: { Authorization: `Bearer ${token}` }
-    // });
-  }
 };

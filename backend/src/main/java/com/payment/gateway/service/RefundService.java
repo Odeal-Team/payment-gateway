@@ -28,7 +28,7 @@ public class RefundService {
     private final AuditService auditService;
     private final PaymentService paymentService;
     private final MerchantContextService merchantContextService;
-    
+
     public RefundResponse createRefund(RefundRequest request) {
         try {
             // Validate payment exists and get payment details
@@ -243,7 +243,6 @@ public class RefundService {
                 return List.of(); // Merchant ID bulunamadı
             }
         }
-        
         return refunds.stream()
                 .map(refund -> createRefundResponse(refund, null, true))
                 .collect(Collectors.toList());

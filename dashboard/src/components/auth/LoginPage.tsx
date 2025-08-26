@@ -167,17 +167,7 @@ const LoginPage: React.FC = () => {
               )}
             </Button>
 
-            {/* Demo Credentials */} <Box sx={{ mt: 3, p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50', borderRadius: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                Demo Credentials:
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5 }}>
-                Email: merchant@test.com
-              </Typography>
-              <Typography variant="body2">
-                Password: password
-              </Typography>
-            </Box>
+            
 
             {/* Footer Links */}
             <Box sx={{ mt: 3, textAlign: 'center' }}>
@@ -194,7 +184,7 @@ const LoginPage: React.FC = () => {
         {/* Footer */}
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-            © 2024 Payment Gateway. All rights reserved.
+            © 2025 Payment Gateway. All rights reserved.
           </Typography>
         </Box>
       </Box>

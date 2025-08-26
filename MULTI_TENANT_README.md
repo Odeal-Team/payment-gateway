@@ -123,3 +123,4 @@ GET /api/admin/merchants   # Tüm merchant'lar
 - Merchant isolation her endpoint'te kontrol edilmeli
 - Admin yetkileri sıkı kontrol edilmeli
 - Cross-site scripting (XSS) koruması eklenmeli
+
