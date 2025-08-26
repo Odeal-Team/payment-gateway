@@ -44,7 +44,7 @@ public class MerchantController {
     /**
      * Merchant ID ile merchant getir
      */
-    @GetMapping("/merchant-id/{merchantId}")
+    @GetMapping("/{merchantId}")
     public ResponseEntity<MerchantResponse> getMerchantByMerchantId(@PathVariable String merchantId) {
         log.info("🔍 Merchant ID ile merchant aranıyor: {}", merchantId);
         return merchantService.getMerchantByMerchantId(merchantId)
@@ -128,36 +128,15 @@ public class MerchantController {
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
     
-    /**
-     * API key yenile
-     */
-    @PostMapping("/{merchantId}/regenerate-api-key")
-    public ResponseEntity<ApiKeyResponse> regenerateApiKey(@PathVariable String merchantId) {
-        log.info("🔑 API key yenileniyor: {}", merchantId);
-        ApiKeyResponse response = merchantService.regenerateApiKey(merchantId);
-        
-        if (response.getApiKey() != null) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
     
     /**
-     * Merchant istatistikleri
+     * Merchant sayısı
      */
     @GetMapping("/stats/count")
     public ResponseEntity<Long> getMerchantCount() {
         long count = merchantService.getMerchantCount();
         return ResponseEntity.ok(count);
     }
+
     
-    /**
-     * Status'e göre merchant sayısı
-     */
-    @GetMapping("/stats/count/{status}")
-    public ResponseEntity<Long> getMerchantCountByStatus(@PathVariable Merchant.MerchantStatus status) {
-        long count = merchantService.getMerchantCountByStatus(status);
-        return ResponseEntity.ok(count);
-    }
 }

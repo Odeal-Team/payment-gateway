@@ -76,35 +76,6 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-
-    // GET - Get payment by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<PaymentResponse> getPaymentById(
-            @PathVariable Long id,
-            @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
-        log.info("Retrieving payment with ID: {}", id);
-
-        // API Key kontrolü
-        if (!merchantAuthService.isValidApiKey(apiKey)) {
-            log.warn("🚫 Geçersiz API key ile payment get denemesi");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // Merchant ID'yi API key'den al
-        String merchantId = getMerchantIdFromApiKey(apiKey);
-        if (merchantId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        PaymentResponse response = paymentService.getPaymentByIdForMerchant(id, merchantId);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
     // GET - Get payment by transaction ID
     @GetMapping("/transaction/{transactionId}")
     public ResponseEntity<PaymentResponse> getPaymentByTransactionId(
@@ -239,23 +210,6 @@ public class PaymentController {
         List<PaymentResponse> payments = paymentService.getPaymentsByStatus(status);
         return ResponseEntity.ok(payments);
     }
-
-    // PUT - Update payment status
-    @PutMapping("/{id}/status")
-    public ResponseEntity<PaymentResponse> updatePaymentStatus(
-            @PathVariable Long id,
-            @RequestParam Payment.PaymentStatus status) {
-        log.info("Updating payment status to {} for ID: {}", status, id);
-
-        PaymentResponse response = paymentService.updatePaymentStatus(id, status);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
     // DELETE - Delete payment
     @DeleteMapping("/{id}")
     public ResponseEntity<PaymentResponse> deletePayment(@PathVariable Long id) {
@@ -269,103 +223,12 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-
-
-
-    // 3D Secure Success Callback
-    @PostMapping("/3d-callback/success")
-    public ResponseEntity<String> handle3DSecureSuccess(@RequestParam Map<String, String> params) {
-        log.info("3D Secure success callback received with params: {}", params);
-
-        try {
-            String orderId = params.get("orderId");
-            String transactionId = params.get("transactionId");
-            String authCode = params.get("authCode");
-
-            if (orderId != null) {
-                // Payment'i başarılı olarak güncelle
-                PaymentResponse response = paymentService.complete3DSecurePayment(orderId, transactionId, authCode, true);
-
-                if (response.isSuccess()) {
-                    // Başarılı ödeme sonrası yönlendirme sayfası
-                    return ResponseEntity.ok("""
-                            <html>
-                            <head><title>Payment Successful</title></head>
-                            <body>
-                            <h2>✅ Payment Successful!</h2>
-                            <p>Transaction ID: %s</p>
-                            <p>Order ID: %s</p>
-                            <script>
-                                setTimeout(function() {
-                                    window.close();
-                                }, 3000);
-                            </script>
-                            </body>
-                            </html>
-                            """.formatted(transactionId, orderId));
-                } else {
-                    return ResponseEntity.badRequest().body("Payment completion failed: " + response.getMessage());
-                }
-            } else {
-                return ResponseEntity.badRequest().body("Missing orderId parameter");
-            }
-
-        } catch (Exception e) {
-            log.error("Error processing 3D Secure success callback", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing 3D Secure callback: " + e.getMessage());
-        }
-    }
-
-    // 3D Secure Fail Callback
-    @PostMapping("/3d-callback/fail")
-    public ResponseEntity<String> handle3DSecureFail(@RequestParam Map<String, String> params) {
-        log.info("3D Secure fail callback received with params: {}", params);
-
-        try {
-            String orderId = params.get("orderId");
-            String errorMessage = params.get("errorMessage");
-
-            if (orderId != null) {
-                // Payment'i başarısız olarak güncelle
-                PaymentResponse response = paymentService.complete3DSecurePayment(orderId, null, null, false);
-
-                // Başarısız ödeme sonrası yönlendirme sayfası
-                return ResponseEntity.ok("""
-                        <html>
-                        <head><title>Payment Failed</title></head>
-                        <body>
-                        <h2>❌ Payment Failed!</h2>
-                        <p>Order ID: %s</p>
-                        <p>Error: %s</p>
-                        <script>
-                            setTimeout(function() {
-                                window.close();
-                            }, 3000);
-                        </script>
-                        </body>
-                        </html>
-                        """.formatted(orderId, errorMessage != null ? errorMessage : "3D Secure authentication failed"));
-            } else {
-                return ResponseEntity.badRequest().body("Missing orderId parameter");
-            }
-
-        } catch (Exception e) {
-            log.error("Error processing 3D Secure fail callback", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing 3D Secure callback: " + e.getMessage());
-        }
-    }
-
-
-
-
     // ===== BANK WEBHOOK ENDPOINTS =====
-    
+
     /**
      * Banka webhook callback'i - Ödeme sonucu geldiğinde
      */
-    @PostMapping("/bank-webhook")
+   /*  @PostMapping("/bank-webhook")
     public ResponseEntity<Map<String, String>> handleBankWebhook(@RequestBody Map<String, Object> webhookData) {
         log.info("🏦 Bank webhook received: {}", webhookData);
         
@@ -402,7 +265,7 @@ public class PaymentController {
                 .body(Map.of("error", "Failed to process webhook: " + e.getMessage()));
         }
     }
-    
+    */
     /**
      * Banka'dan gelen payment webhook'ını simüle et (test için)
      */

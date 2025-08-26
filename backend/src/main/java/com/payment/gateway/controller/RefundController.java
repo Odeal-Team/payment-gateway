@@ -119,7 +119,7 @@ public class RefundController {
     }
     
     // GET - Get refund by refund ID
-    @GetMapping("/refund-id/{refundId}")
+    @GetMapping("/{refundId}")
     public ResponseEntity<RefundResponse> getRefundByRefundId(
             @PathVariable String refundId,
             @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
@@ -273,29 +273,6 @@ public class RefundController {
         return ResponseEntity.ok(refunds);
     }
     
-    // GET - Get refunds by reason
-    @GetMapping("/reason/{reason}")
-    public ResponseEntity<List<RefundResponse>> getRefundsByReason(
-            @PathVariable Refund.RefundReason reason,
-            @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
-        log.info("Retrieving refunds with reason: {}", reason);
-
-        // API Key kontrolü
-        if (!merchantAuthService.isValidApiKey(apiKey)) {
-            log.warn("🚫 Geçersiz API key ile refunds by reason denemesi");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        // Merchant ID'yi API key'den al
-        String merchantId = getMerchantIdFromApiKey(apiKey);
-        if (merchantId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        List<RefundResponse> refunds = refundService.getRefundsByReasonForMerchant(reason, merchantId);
-        return ResponseEntity.ok(refunds);
-    }
-    
     // GET - Get refunds by transaction ID
     @GetMapping("/transaction/{transactionId}")
     public ResponseEntity<List<RefundResponse>> getRefundsByTransactionId(
@@ -318,80 +295,7 @@ public class RefundController {
         List<RefundResponse> refunds = refundService.getRefundsByTransactionIdForMerchant(transactionId, merchantId);
         return ResponseEntity.ok(refunds);
     }
-    
-    // POST - Update refund
-    @PostMapping("/{id}/update")
-    public ResponseEntity<RefundResponse> updateRefund(@PathVariable Long id, @Valid @RequestBody RefundRequest request) {
-        log.info("Updating refund with ID: {}", id);
-        
-        RefundResponse response = refundService.updateRefund(id, request);
-        
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    
-    // PUT - Update refund status
-    @PutMapping("/{id}/status")
-    public ResponseEntity<RefundResponse> updateRefundStatus(
-            @PathVariable Long id, 
-            @RequestParam Refund.RefundStatus status) {
-        log.info("Updating refund status to {} for ID: {}", status, id);
-        
-        RefundResponse response = refundService.updateRefundStatus(id, status);
-        
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    
-    // POST - Bank webhook for refund status updates
-    @PostMapping("/webhooks/garanti")
-    public ResponseEntity<String> handleGarantiRefundWebhook(@RequestBody String webhookData) {
-        log.info("Received Garanti BBVA refund webhook: {}", webhookData);
-        
-        try {
-            // Process Garanti BBVA refund webhook
-            refundService.processBankRefundWebhook("GARANTI", webhookData);
-            return ResponseEntity.ok("Webhook processed successfully");
-        } catch (Exception e) {
-            log.error("Error processing Garanti BBVA refund webhook: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Webhook processing failed");
-        }
-    }
-    
-    @PostMapping("/webhooks/isbank")
-    public ResponseEntity<String> handleIsBankRefundWebhook(@RequestBody String webhookData) {
-        log.info("Received İş Bankası refund webhook: {}", webhookData);
-        
-        try {
-            // Process İş Bankası refund webhook
-            refundService.processBankRefundWebhook("ISBANK", webhookData);
-            return ResponseEntity.ok("Webhook processed successfully");
-        } catch (Exception e) {
-            log.error("Error processing İş Bankası refund webhook: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Webhook processing failed");
-        }
-    }
-    
-    @PostMapping("/webhooks/akbank")
-    public ResponseEntity<String> handleAkbankRefundWebhook(@RequestBody String webhookData) {
-        log.info("Received Akbank refund webhook: {}", webhookData);
-        
-        try {
-            // Process Akbank refund webhook
-            refundService.processBankRefundWebhook("AKBANK", webhookData);
-            return ResponseEntity.ok("Webhook processed successfully");
-        } catch (Exception e) {
-            log.error("Error processing Akbank refund webhook: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Webhook processing failed");
-        }
-    }
-    
+
     /**
      * Banka'dan gelen refund webhook'ını simüle et (test için)
      */
@@ -438,23 +342,6 @@ public class RefundController {
         if (apiKey == null) {
             return null;
         }
-        
-        // Test mode - her test API key'ini farklı merchant'a eşle
-        if (apiKey.startsWith("pk_test_") || apiKey.equals("pk_merch001_live_abc123")) {
-            switch (apiKey) {
-                case "pk_test_merchant1":
-                    return "TEST_MERCHANT";
-                case "pk_test_merchant2":
-                    return "TEST_MERCHANT_2";
-                case "pk_test_merchant3":
-                    return "TEST_MERCHANT_3";
-                case "pk_merch001_live_abc123":
-                    return "TEST_MERCHANT"; // Bu API key için TEST_MERCHANT döndür
-                default:
-                    return "TEST_MERCHANT"; // Default test merchant
-            }
-        }
-        
         // Production'da merchant'ı API key ile bulup merchant ID'yi döneriz
         return merchantAuthService.getMerchantByApiKey(apiKey)
                 .map(merchant -> merchant.getMerchantId())
