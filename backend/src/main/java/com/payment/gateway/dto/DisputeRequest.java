@@ -37,8 +37,7 @@ public class DisputeRequest {
     @NotNull(message = "Dispute reason is required")
     private Dispute.DisputeReason reason;
     
-    @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
+    @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
     
     @Size(max = 1000, message = "Evidence cannot exceed 1000 characters")

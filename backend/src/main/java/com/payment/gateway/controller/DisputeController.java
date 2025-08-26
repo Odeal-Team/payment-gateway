@@ -308,6 +308,44 @@ public class DisputeController {
         }
     }
     
+    // POST - Admin approve dispute by dispute ID
+    @PostMapping("/{disputeId}/approve")
+    public ResponseEntity<DisputeResponse> approveDisputeByDisputeId(
+            @PathVariable String disputeId,
+            @RequestBody(required = false) Map<String, String> request) {
+        log.info("Admin approving dispute with dispute ID: {}", disputeId);
+        
+        String adminNotes = request != null ? request.get("adminNotes") : "Admin tarafından onaylandı";
+        
+        DisputeResponse response = disputeService.evaluateDisputeByDisputeId(disputeId, "WON", adminNotes, null);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // POST - Admin reject dispute by dispute ID
+    @PostMapping("/{disputeId}/reject")
+    public ResponseEntity<DisputeResponse> rejectDisputeByDisputeId(
+            @PathVariable String disputeId,
+            @RequestBody(required = false) Map<String, String> request) {
+        log.info("Admin rejecting dispute with dispute ID: {}", disputeId);
+        
+        String adminNotes = request != null ? request.get("adminNotes") : "Admin tarafından reddedildi";
+        
+        DisputeResponse response = disputeService.evaluateDisputeByDisputeId(disputeId, "LOST", adminNotes, null);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+
+    
     // POST - Notify merchant about dispute result
     @PostMapping("/{id}/notify-merchant")
     public ResponseEntity<DisputeResponse> notifyMerchantAboutDisputeResult(@PathVariable Long id) {

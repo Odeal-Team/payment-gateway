@@ -32,8 +32,7 @@ import dashboardAPI from '../services/dashboardApi';
 import {
   DisputeDetail,
   DisputeStatus,
-  DisputeReason,
-  DisputeResponseType
+  DisputeReason
 } from '../types/dashboard';
 
 const DisputeDetailPage: React.FC = () => {
@@ -45,7 +44,7 @@ const DisputeDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
-  const [responseType, setResponseType] = useState<DisputeResponseType>(DisputeResponseType.DEFEND);
+
   const [evidence, setEvidence] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -120,6 +119,25 @@ const DisputeDetailPage: React.FC = () => {
         return 'success';
       case DisputeStatus.CLOSED:
         return 'secondary';
+      case DisputeStatus.PARTIAL_REFUND:
+        return 'warning';
+      // Bank dispute statuses
+      case DisputeStatus.BANK_INITIATED:
+      case DisputeStatus.MERCHANT_NOTIFIED:
+      case DisputeStatus.AWAITING_MERCHANT_RESPONSE:
+      case DisputeStatus.PENDING_MERCHANT_RESPONSE:
+        return 'info';
+      case DisputeStatus.MERCHANT_ACCEPTED:
+        return 'error';
+      case DisputeStatus.MERCHANT_DEFENDED:
+      case DisputeStatus.ADMIN_EVALUATING:
+      case DisputeStatus.PENDING_ADMIN_EVALUATION:
+      case DisputeStatus.BANK_DECISION_PENDING:
+        return 'warning';
+      case DisputeStatus.BANK_APPROVED:
+        return 'success';
+      case DisputeStatus.BANK_REJECTED:
+        return 'error';
       default:
         return 'default';
     }
@@ -141,6 +159,31 @@ const DisputeDetailPage: React.FC = () => {
         return 'Kazanıldı';
       case DisputeStatus.LOST:
         return 'Kaybedildi';
+      case DisputeStatus.PARTIAL_REFUND:
+        return 'Kısmi İade';
+      // Bank dispute statuses
+      case DisputeStatus.BANK_INITIATED:
+        return 'Banka Başlattı';
+      case DisputeStatus.MERCHANT_NOTIFIED:
+        return 'Merchant Bildirildi';
+      case DisputeStatus.AWAITING_MERCHANT_RESPONSE:
+        return 'Merchant Cevabı Bekleniyor';
+      case DisputeStatus.PENDING_MERCHANT_RESPONSE:
+        return 'Merchant Cevabı Bekleniyor';
+      case DisputeStatus.MERCHANT_ACCEPTED:
+        return 'Merchant Kabul Etti';
+      case DisputeStatus.MERCHANT_DEFENDED:
+        return 'Merchant Savundu';
+      case DisputeStatus.ADMIN_EVALUATING:
+        return 'Admin Değerlendiriyor';
+      case DisputeStatus.PENDING_ADMIN_EVALUATION:
+        return 'Admin Değerlendirmesi Bekleniyor';
+      case DisputeStatus.BANK_DECISION_PENDING:
+        return 'Banka Kararı Bekleniyor';
+      case DisputeStatus.BANK_APPROVED:
+        return 'Banka Onayladı';
+      case DisputeStatus.BANK_REJECTED:
+        return 'Banka Reddetti';
       default:
         return status;
     }
@@ -168,26 +211,32 @@ const DisputeDetailPage: React.FC = () => {
   };
 
   const handleResponse = async () => {
-    if (!disputeId) return;
+    if (!disputeId || !evidence.trim()) {
+      setError('Kanıt alanı boş olamaz');
+      return;
+    }
     
     try {
       setSubmitting(true);
-      await dashboardAPI.respondToDispute('MERCH001', disputeId, {
-        responseType,
-        evidence,
-        notes
+      console.log('📝 Adding evidence to dispute:', disputeId);
+      
+      // Yeni API endpoint'i - evidence ekleme
+      await dashboardAPI.addEvidenceToDispute(disputeId, {
+        evidence: evidence.trim(),
+        additionalNotes: notes.trim() || undefined
       });
       
       setResponseDialogOpen(false);
       setEvidence('');
       setNotes('');
+      setError(null);
       
       // Reload dispute detail
-      loadDisputeDetail();
+      await loadDisputeDetail();
       
-    } catch (err) {
-      console.error('Error submitting response:', err);
-      setError('Cevap gönderilirken hata oluştu');
+    } catch (err: any) {
+      console.error('Error adding evidence:', err);
+      setError(`Kanıt eklenirken hata oluştu: ${err.response?.data?.message || err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -239,13 +288,13 @@ const DisputeDetailPage: React.FC = () => {
           />
         </Box>
         
-        {(dispute.status === DisputeStatus.OPENED || dispute.status === DisputeStatus.EVIDENCE_REQUIRED) && (
+        {dispute.status === DisputeStatus.OPENED && (
           <Button
             variant="contained"
             startIcon={<Edit />}
             onClick={() => setResponseDialogOpen(true)}
           >
-            Cevap Ver
+            Kanıt Ekle
           </Button>
         )}
       </Box>
@@ -342,7 +391,7 @@ const DisputeDetailPage: React.FC = () => {
                   {dispute.description || 'Açıklama mevcut değil'}
                 </Typography>
                 
-                {dispute.evidence && (
+                {dispute.evidence && dispute.evidence !== 'Initial evidence' && dispute.status !== DisputeStatus.OPENED && (
                   <Box mt={2}>
                     <Typography variant="subtitle2" gutterBottom>
                       Kanıt:
@@ -415,61 +464,50 @@ const DisputeDetailPage: React.FC = () => {
 
       {/* Response Dialog */}
       <Dialog open={responseDialogOpen} onClose={() => setResponseDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Dispute Cevabı</DialogTitle>
+        <DialogTitle>Kanıt Ekle</DialogTitle>
         <DialogContent>
           <Box display="grid" gap={3} pt={1}>
-            <FormControl component="fieldset">
-              <FormLabel component="legend">Cevap Türü</FormLabel>
-              <RadioGroup
-                value={responseType}
-                onChange={(e) => setResponseType(e.target.value as DisputeResponseType)}
-              >
-                <FormControlLabel
-                  value={DisputeResponseType.ACCEPT}
-                  control={<Radio />}
-                  label="Kabul Et (Otomatik iade işlemi başlatılır)"
-                />
-                <FormControlLabel
-                  value={DisputeResponseType.DEFEND}
-                  control={<Radio />}
-                  label="Savun (Kanıt ve açıklama gönder)"
-                />
-              </RadioGroup>
-            </FormControl>
+            <TextField
+              label="Kanıt/Delil *"
+              multiline
+              rows={4}
+              value={evidence}
+              onChange={(e) => setEvidence(e.target.value)}
+              placeholder="Dispute'ı destekleyen kanıtlarınızı buraya yazın..."
+              required
+              error={!evidence.trim() && submitting}
+              helperText={!evidence.trim() && submitting ? "Kanıt alanı zorunludur" : ""}
+            />
+            
+            <TextField
+              label="Ek Notlar"
+              multiline
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ek açıklamalar ve notlar..."
+            />
 
-            {responseType === DisputeResponseType.DEFEND && (
-              <>
-                <TextField
-                  label="Kanıt/Delil"
-                  multiline
-                  rows={4}
-                  value={evidence}
-                  onChange={(e) => setEvidence(e.target.value)}
-                  placeholder="Dispute'ı destekleyen kanıtlarınızı buraya yazın..."
-                />
-                
-                <TextField
-                  label="Ek Notlar"
-                  multiline
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ek açıklamalar ve notlar..."
-                />
-              </>
+            {error && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {error}
+              </Alert>
             )}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setResponseDialogOpen(false)}>
+          <Button onClick={() => {
+            setResponseDialogOpen(false);
+            setError(null);
+          }}>
             İptal
           </Button>
           <Button
             variant="contained"
             onClick={handleResponse}
-            disabled={submitting || (responseType === DisputeResponseType.DEFEND && !evidence.trim())}
+            disabled={submitting || !evidence.trim()}
           >
-            {submitting ? 'Gönderiliyor...' : 'Cevabı Gönder'}
+            {submitting ? <CircularProgress size={20} /> : 'Kanıt Gönder'}
           </Button>
         </DialogActions>
       </Dialog>

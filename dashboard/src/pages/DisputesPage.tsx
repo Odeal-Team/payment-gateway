@@ -199,6 +199,25 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
         return 'success';
       case DisputeStatus.CLOSED:
         return 'secondary';
+      case DisputeStatus.PARTIAL_REFUND:
+        return 'warning';
+      // Bank dispute statuses
+      case DisputeStatus.BANK_INITIATED:
+      case DisputeStatus.MERCHANT_NOTIFIED:
+      case DisputeStatus.AWAITING_MERCHANT_RESPONSE:
+      case DisputeStatus.PENDING_MERCHANT_RESPONSE:
+        return 'info';
+      case DisputeStatus.MERCHANT_ACCEPTED:
+        return 'error';
+      case DisputeStatus.MERCHANT_DEFENDED:
+      case DisputeStatus.ADMIN_EVALUATING:
+      case DisputeStatus.PENDING_ADMIN_EVALUATION:
+      case DisputeStatus.BANK_DECISION_PENDING:
+        return 'warning';
+      case DisputeStatus.BANK_APPROVED:
+        return 'success';
+      case DisputeStatus.BANK_REJECTED:
+        return 'error';
       default:
         return 'default';
     }
@@ -220,6 +239,31 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
         return 'Kazanıldı';
       case DisputeStatus.LOST:
         return 'Kaybedildi';
+      case DisputeStatus.PARTIAL_REFUND:
+        return 'Kısmi İade';
+      // Bank dispute statuses
+      case DisputeStatus.BANK_INITIATED:
+        return 'Banka Başlattı';
+      case DisputeStatus.MERCHANT_NOTIFIED:
+        return 'Merchant Bildirildi';
+      case DisputeStatus.AWAITING_MERCHANT_RESPONSE:
+        return 'Merchant Cevabı Bekleniyor';
+      case DisputeStatus.PENDING_MERCHANT_RESPONSE:
+        return 'Merchant Cevabı Bekleniyor';
+      case DisputeStatus.MERCHANT_ACCEPTED:
+        return 'Merchant Kabul Etti';
+      case DisputeStatus.MERCHANT_DEFENDED:
+        return 'Merchant Savundu';
+      case DisputeStatus.ADMIN_EVALUATING:
+        return 'Admin Değerlendiriyor';
+      case DisputeStatus.PENDING_ADMIN_EVALUATION:
+        return 'Admin Değerlendirmesi Bekleniyor';
+      case DisputeStatus.BANK_DECISION_PENDING:
+        return 'Banka Kararı Bekleniyor';
+      case DisputeStatus.BANK_APPROVED:
+        return 'Banka Onayladı';
+      case DisputeStatus.BANK_REJECTED:
+        return 'Banka Reddetti';
       default:
         return status;
     }

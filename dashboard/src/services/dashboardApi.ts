@@ -903,6 +903,59 @@ export const dashboardAPI = {
       console.error('Respond to dispute error:', error);
       throw error;
     }
+  },
+
+  addEvidenceToDispute: async (
+    disputeId: string,
+    evidenceData: { evidence: string; additionalNotes?: string }
+  ): Promise<any> => {
+    try {
+      console.log('📎 Adding evidence to dispute:', disputeId);
+      const response = await dashboardApiClient.post(
+        `/v1/disputes/dispute-id/${disputeId}/evidence`,
+        evidenceData,
+        {
+          headers: {
+            'X-API-Key': 'pk_test_merchant1' // Test API key
+          }
+        }
+      );
+      console.log('✅ Evidence added successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Add evidence error:', error);
+      throw error;
+    }
+  },
+
+  approveDispute: async (disputeId: string): Promise<any> => {
+    try {
+      console.log('✅ Approving dispute:', disputeId);
+      const response = await dashboardApiClient.post(
+        `/v1/disputes/${disputeId}/approve`,
+        { adminNotes: 'Admin tarafından onaylandı - Customer kazandı' }
+      );
+      console.log('✅ Dispute approved successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Approve dispute error:', error);
+      throw error;
+    }
+  },
+
+  rejectDispute: async (disputeId: string): Promise<any> => {
+    try {
+      console.log('❌ Rejecting dispute:', disputeId);
+      const response = await dashboardApiClient.post(
+        `/v1/disputes/${disputeId}/reject`,
+        { adminNotes: 'Admin tarafından reddedildi - Merchant kazandı' }
+      );
+      console.log('✅ Dispute rejected successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Reject dispute error:', error);
+      throw error;
+    }
   }
 };
 
