@@ -6,22 +6,16 @@ import {
   Box,
   IconButton,
   Button,
-  Chip,
   Menu,
   MenuItem,
   Avatar,
   Divider,
-  Select,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Search,
   Notifications,
   AccountCircle,
   ExitToApp,
-  Store,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import ThemeToggle from '../common/ThemeToggle';
@@ -32,16 +26,29 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, onSidebarToggle }) => {
-  const { state, logout, switchMerchant } = useAuth();
+  const { state, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  
-  // Demo merchant listesi
-  const demoMerchants = [
-    { id: 'TEST_MERCHANT', name: 'Test Merchant' },
-    { id: 'DEMO_STORE', name: 'Demo Store' },
-    { id: 'SAMPLE_SHOP', name: 'Sample Shop' },
-    { id: 'ADMIN_MERCHANT', name: 'Admin Dashboard' },
-  ];
+  const [notifAnchorEl, setNotifAnchorEl] = React.useState<null | HTMLElement>(null);
+  const notifications = React.useMemo(() => {
+    // Placeholder notification items; wire with real data when available
+    return [
+      {
+        id: 'n1',
+        title: 'Payment completed',
+        subtitle: 'Latest transaction marked as COMPLETED',
+      },
+      {
+        id: 'n2',
+        title: 'Refund processed',
+        subtitle: 'A refund has been issued successfully',
+      },
+      {
+        id: 'n3',
+        title: 'Dispute opened',
+        subtitle: 'A new dispute requires your attention',
+      },
+    ];
+  }, []);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -54,6 +61,14 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, onSidebarToggle }) => {
   const handleLogout = () => {
     handleProfileMenuClose();
     logout();
+  };
+
+  const handleNotifOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setNotifAnchorEl(event.currentTarget);
+  };
+
+  const handleNotifClose = () => {
+    setNotifAnchorEl(null);
   };
 
   return (
@@ -151,50 +166,39 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, onSidebarToggle }) => {
             </Typography>
           </Box>
           
-          {/* Test Mode Banner - like Hyperswitch */}
-          <Chip
-            label="You're in Test Mode"
-            variant="outlined"
-            color="warning"
-            size="small"
-            sx={{ 
-              backgroundColor: 'warning.main',
-              color: 'warning.contrastText',
-              fontWeight: 500,
-              borderColor: 'warning.main'
-            }}
-          />
+          {/* Test Mode banner removed */}
           
-          {/* Merchant Selector */}
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="merchant-select-label">Merchant</InputLabel>
-            <Select
-              labelId="merchant-select-label"
-              value={state.user?.merchantId || ''}
-              label="Merchant"
-              onChange={(e) => switchMerchant(e.target.value)}
-              startAdornment={<Store sx={{ mr: 1, color: 'text.secondary' }} />}
-            >
-              {demoMerchants.map((merchant) => (
-                <MenuItem key={merchant.id} value={merchant.id}>
-                  {merchant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {/* Merchant Selector removed per request */}
         </Box>
 
         {/* Right Section */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Search - could be implemented later */}
-          <IconButton color="inherit" size="large">
-            <Search />
-          </IconButton>
-
           {/* Notifications */}
-          <IconButton color="inherit" size="large">
+          <IconButton color="inherit" size="large" onClick={handleNotifOpen} aria-controls="notif-menu" aria-haspopup="true">
             <Notifications />
           </IconButton>
+          <Menu
+            id="notif-menu"
+            anchorEl={notifAnchorEl}
+            open={Boolean(notifAnchorEl)}
+            onClose={handleNotifClose}
+            PaperProps={{
+              elevation: 2,
+              sx: { mt: 1.5, minWidth: 300 }
+            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+            {notifications.length === 0 && (
+              <MenuItem disabled> No notifications </MenuItem>
+            )}
+            {notifications.map(n => (
+              <MenuItem key={n.id} onClick={handleNotifClose} sx={{ display: 'block', whiteSpace: 'normal', lineHeight: 1.2 }}>
+                <Typography variant="subtitle2">{n.title}</Typography>
+                <Typography variant="caption" color="text.secondary">{n.subtitle}</Typography>
+              </MenuItem>
+            ))}
+          </Menu>
 
           {/* Theme Toggle */}
           <ThemeToggle />

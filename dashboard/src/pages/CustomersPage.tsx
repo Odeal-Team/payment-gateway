@@ -28,6 +28,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CustomerDetail, CustomerStatus } from '../types/dashboard';
+import { dashboardAPI } from '../services/dashboardApi';
 import StatusChip from '../components/common/StatusChip';
 
 const CustomersPage: React.FC = () => {
@@ -44,14 +45,9 @@ const CustomersPage: React.FC = () => {
     setError(null);
     
     try {
-      // TODO: Replace with real API call
-      // const customersData = await dashboardAPI.getCustomers();
-      
-      // Get customers from localStorage (real data from payments)
-      const storedCustomers = JSON.parse(localStorage.getItem('customers') || '[]');
-      
-      // Only show real customers from localStorage, no mock data
-      const customersToShow = storedCustomers;
+      // Real data - build customers from payments
+      const customersData = await dashboardAPI.getCustomers();
+      const customersToShow = customersData || [];
       
       // Sort by creation date (newest first) if there are customers
       if (customersToShow.length > 0) {

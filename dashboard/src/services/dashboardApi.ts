@@ -94,13 +94,32 @@ export const dashboardAPI = {
       console.log('📊 Getting customer payments for customer:', customerId, 'merchant:', merchantId);
       
       const response = await dashboardApiClient.get(`/v1/payments/customer/${customerId}`);
-      const payments = response.data;
+      let payments = response.data;
       
       // Ensure transactionId is properly mapped
-      return payments.map((payment: any) => ({
+      let mapped = payments.map((payment: any) => ({
         ...payment,
         transactionId: payment.transactionId || payment.transaction_id || payment.id || 'N/A'
       }));
+
+      // Fallback: If backend returned empty (edge cases), fetch merchant payments and filter client-side
+      if (!mapped || mapped.length === 0) {
+        try {
+          console.log('ℹ️ Fallback: fetching merchant payments to filter by customer');
+          const merchRes = await dashboardApiClient.get(`/v1/payments/merchant/${merchantId}`);
+          const all = merchRes.data || [];
+          mapped = all
+            .filter((p: any) => p.customerId === customerId)
+            .map((payment: any) => ({
+              ...payment,
+              transactionId: payment.transactionId || payment.transaction_id || payment.id || 'N/A'
+            }));
+        } catch (e) {
+          console.warn('Fallback merchant fetch failed', e);
+        }
+      }
+
+      return mapped;
     } catch (error) {
       console.error('Get customer payments error:', error);
       return [];

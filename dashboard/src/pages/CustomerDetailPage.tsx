@@ -35,10 +35,21 @@ import { format } from 'date-fns';
 import { CustomerDetail, CustomerStatus, RefundListItem } from '../types/dashboard';
 import StatusChip from '../components/common/StatusChip';
 import { dashboardAPI } from '../services/dashboardApi';
+import { useAuth } from '../contexts/AuthContext';
 
 const CustomerDetailPage: React.FC = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
+  const { state: authState } = useAuth();
+  const currentMerchantId = React.useMemo(() => {
+    return authState.user?.merchantId || (() => {
+      try {
+        const userStr = localStorage.getItem('auth_user');
+        if (userStr) return JSON.parse(userStr).merchantId;
+      } catch {}
+      return 'TEST_MERCHANT';
+    })();
+  }, [authState.user]);
   
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,14 +66,8 @@ const CustomerDetailPage: React.FC = () => {
     setError(null);
     
     try {
-      // Backend'den real-time payment verilerini çek
-      const paymentsResponse = await dashboardAPI.getPayments('TEST_MERCHANT');
-      const allPayments = paymentsResponse.payments || [];
-      
-      // Bu customer'a ait payment'ları filtrele
-      const customerPayments = allPayments.filter((payment: any) => 
-        payment.customerId === customerId
-      );
+      // Backend'den bu müşteriye ait ödemeleri doğrudan çek
+      const customerPayments = await dashboardAPI.getCustomerPayments(customerId);
       
       if (customerPayments.length === 0) {
         setError('No payments found for this customer');
@@ -186,7 +191,7 @@ const CustomerDetailPage: React.FC = () => {
       
       // Get refunds for this customer's payments using the same API as RefundsPage
       try {
-        const refundsResponse = await dashboardAPI.getRefunds('TEST_MERCHANT');
+        const refundsResponse = await dashboardAPI.getRefunds(currentMerchantId);
         const allRefunds = refundsResponse.refunds;
         
         // Filter refunds that belong to this customer's payments
@@ -237,16 +242,30 @@ const CustomerDetailPage: React.FC = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (value: any) => {
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return 'Invalid Date';
+      if (!value) return '—';
+      if (Array.isArray(value)) {
+        const [y, m, d, hh = 0, mm = 0, ss = 0] = value;
+        const dt = new Date(y, (m || 1) - 1, d || 1, hh, mm, ss);
+        if (isNaN(dt.getTime())) return '—';
+        return format(dt, 'MMM dd, yyyy HH:mm:ss');
       }
-      return format(date, 'MMM dd, yyyy HH:mm:ss');
+      if (typeof value === 'number') {
+        const dt = new Date(value);
+        if (isNaN(dt.getTime())) return '—';
+        return format(dt, 'MMM dd, yyyy HH:mm:ss');
+      }
+      if (typeof value === 'string') {
+        const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+        const dt = new Date(normalized);
+        if (isNaN(dt.getTime())) return '—';
+        return format(dt, 'MMM dd, yyyy HH:mm:ss');
+      }
+      return '—';
     } catch (error) {
-      console.error('Error formatting date:', dateString, error);
-      return 'Invalid Date';
+      console.error('Error formatting date:', value, error);
+      return '—';
     }
   };
 
@@ -323,13 +342,10 @@ const CustomerDetailPage: React.FC = () => {
           variant="outlined"
           onClick={async () => {
             try {
+              if (!customerId) { console.error('Debug: customerId missing'); return; }
               console.log('🔍 Debug: Fetching real-time payments...');
-              const paymentsResponse = await dashboardAPI.getPayments('TEST_MERCHANT');
-              console.log('🔍 Debug: All payments from backend:', paymentsResponse.payments);
-              
-              const customerPayments = paymentsResponse.payments.filter((p: any) => 
-                p.customerId === customerId
-              );
+              const customerPayments = await dashboardAPI.getCustomerPayments(customerId as string);
+              console.log('🔍 Debug: Customer payments from backend:', customerPayments);
               console.log('🔍 Debug: Customer payments:', customerPayments);
               console.log('🔍 Debug: Payment statuses:', customerPayments.map((p: any) => p.status));
               

@@ -216,8 +216,101 @@ const PaymentsPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Exporting payments...');
+    try {
+      const headers = [
+        'ID',
+        'Payment ID',
+        'Transaction ID',
+        'Merchant ID',
+        'Customer ID',
+        'Amount',
+        'Currency',
+        'Status',
+        'Payment Method',
+        'Card Number',
+        'Card Holder Name',
+        'Description',
+        'Created At',
+        'Updated At',
+      ];
+
+      const excelEscape = (text: string) =>
+        text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+
+      const toCell = (value: any, type: 'String' | 'Number' = 'String') => {
+        if (value === null || value === undefined) value = '';
+        if (type === 'Number' && value !== '') {
+          const num = Number(value);
+          if (!isNaN(num)) {
+            return `<Cell><Data ss:Type="Number">${num}</Data></Cell>`;
+          }
+        }
+        return `<Cell><Data ss:Type="String">${excelEscape(String(value))}</Data></Cell>`;
+      };
+
+      const rowsXml = payments
+        .map(p => {
+          return (
+            '<Row>' +
+            [
+              toCell(p.id, 'Number'),
+              toCell(p.paymentId),
+              toCell(p.transactionId),
+              toCell(p.merchantId),
+              toCell(p.customerId),
+              toCell(p.amount, 'Number'),
+              toCell(p.currency),
+              toCell(p.status),
+              toCell(p.paymentMethod),
+              toCell(p.cardNumber),
+              toCell(p.cardHolderName),
+              toCell(p.description || ''),
+              toCell(p.createdAt),
+              toCell(p.updatedAt),
+            ].join('') +
+            '</Row>'
+          );
+        })
+        .join('');
+
+      const headerRow = '<Row>' + headers.map(h => `<Cell><Data ss:Type="String">${excelEscape(h)}</Data></Cell>`).join('') + '</Row>';
+
+      const workbook =
+        `<?xml version="1.0"?>` +
+        `<?mso-application progid="Excel.Sheet"?>` +
+        `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ` +
+        `xmlns:o="urn:schemas-microsoft-com:office:office" ` +
+        `xmlns:x="urn:schemas-microsoft-com:office:excel" ` +
+        `xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ` +
+        `xmlns:html="http://www.w3.org/TR/REC-html40">` +
+        `<Worksheet ss:Name="Payments">` +
+        `<Table>` +
+        headerRow +
+        rowsXml +
+        `</Table>` +
+        `</Worksheet>` +
+        `</Workbook>`;
+
+      const blob = new Blob([workbook], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const now = new Date();
+      const ts = now.toISOString().replace(/[:.]/g, '-');
+      a.download = `payments-${ts}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export failed', e);
+      setError('Failed to export payments');
+    }
   };
 
   const getStatsCards = (): StatsCard[] => {

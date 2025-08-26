@@ -101,6 +101,104 @@ const RefundsPage: React.FC = () => {
     loadRefunds(currentPage);
   };
 
+  const handleExport = () => {
+    try {
+      const headers = [
+        'ID',
+        'Refund ID',
+        'Payment ID',
+        'Transaction ID',
+        'Merchant ID',
+        'Customer ID',
+        'Amount',
+        'Currency',
+        'Status',
+        'Reason',
+        'Description',
+        'Gateway Refund ID',
+        'Refund Date',
+        'Created At',
+        'Updated At',
+      ];
+
+      const excelEscape = (text: string) =>
+        text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+
+      const toCell = (value: any, type: 'String' | 'Number' = 'String') => {
+        if (value === null || value === undefined) value = '';
+        if (type === 'Number' && value !== '') {
+          const num = Number(value);
+          if (!isNaN(num)) {
+            return `<Cell><Data ss:Type="Number">${num}</Data></Cell>`;
+          }
+        }
+        return `<Cell><Data ss:Type="String">${excelEscape(String(value))}</Data></Cell>`;
+      };
+
+      const rowsXml = refunds
+        .map(r => (
+          '<Row>' +
+          [
+            toCell(r.id, 'Number'),
+            toCell(r.refundId),
+            toCell(r.paymentId),
+            toCell(r.transactionId),
+            toCell(r.merchantId),
+            toCell(r.customerId),
+            toCell(r.amount, 'Number'),
+            toCell(r.currency),
+            toCell(r.status),
+            toCell(r.reason),
+            toCell(r.description || ''),
+            toCell(r.gatewayRefundId || ''),
+            toCell(r.refundDate || ''),
+            toCell(r.createdAt || ''),
+            toCell(r.updatedAt || ''),
+          ].join('') +
+          '</Row>'
+        ))
+        .join('');
+
+      const headerRow = '<Row>' + headers.map(h => `<Cell><Data ss:Type="String">${excelEscape(h)}</Data></Cell>`).join('') + '</Row>';
+
+      const workbook =
+        `<?xml version=\"1.0\"?>` +
+        `<?mso-application progid=\"Excel.Sheet\"?>` +
+        `<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" ` +
+        `xmlns:o=\"urn:schemas-microsoft-com:office:office\" ` +
+        `xmlns:x=\"urn:schemas-microsoft-com:office:excel\" ` +
+        `xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\" ` +
+        `xmlns:html=\"http://www.w3.org/TR/REC-html40\">` +
+        `<Worksheet ss:Name=\"Refunds\">` +
+        `<Table>` +
+        headerRow +
+        rowsXml +
+        `</Table>` +
+        `</Worksheet>` +
+        `</Workbook>`;
+
+      const blob = new Blob([workbook], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const now = new Date();
+      const ts = now.toISOString().replace(/[:.]/g, '-');
+      a.download = `refunds-${ts}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error('Export refunds failed', e);
+      setError('Failed to export refunds');
+    }
+  };
+
   const handleViewRefund = (refund: RefundListItem) => {
     navigate(`/dashboard/refunds/${refund.refundId}`);
   };
@@ -160,7 +258,7 @@ const RefundsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<Download />}
-            onClick={() => console.log('Export refunds')}
+            onClick={handleExport}
           >
             Export
           </Button>

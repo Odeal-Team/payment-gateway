@@ -7,7 +7,6 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<boolean>;
   logout: () => void;
   clearError: () => void;
-  switchMerchant: (merchantId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -173,29 +172,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
-  const switchMerchant = (merchantId: string) => {
-    // Mevcut kullanıcı bilgilerini güncelle
-    if (state.user) {
-      const updatedUser = { ...state.user, merchantId };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
-      
-      dispatch({
-        type: 'RESTORE_SESSION',
-        payload: {
-          user: updatedUser,
-          token: state.token || '',
-          apiKey: state.apiKey || ''
-        }
-      });
-    }
-  };
-
   const value: AuthContextType = {
     state,
     login,
     logout,
     clearError,
-    switchMerchant,
   };
 
   return (

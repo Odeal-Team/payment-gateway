@@ -559,7 +559,7 @@ public class RefundService {
             Thread.sleep(200); // Simulate API call delay
             
             // Simulate success/failure based on amount
-            if (refund.getAmount().compareTo(java.math.BigDecimal.valueOf(5000)) > 0) {
+            if (refund.getAmount().compareTo(java.math.BigDecimal.valueOf(1000000)) > 0) {
                 return "FAILED: Amount exceeds limit";
             } else {
                 return "SUCCESS: Refund request accepted";
@@ -578,7 +578,7 @@ public class RefundService {
         try {
             Thread.sleep(150); // Simulate API call delay
             
-            if (refund.getAmount().compareTo(java.math.BigDecimal.valueOf(3000)) > 0) {
+            if (refund.getAmount().compareTo(java.math.BigDecimal.valueOf(1000000)) > 0) {
                 return "FAILED: Amount exceeds limit";
             } else {
                 return "SUCCESS: Refund request accepted";
