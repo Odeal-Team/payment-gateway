@@ -507,6 +507,36 @@ export const dashboardAPI = {
     };
   },
 
+  // Simulate bank webhook to complete payment
+  simulateBankWebhook: async (transactionId: string): Promise<any> => {
+    try {
+      console.log('🏦 Simulating bank webhook for transaction:', transactionId);
+      
+      const response = await dashboardApiClient.post(`/v1/payments/${transactionId}/simulate-bank-webhook`);
+      console.log('✅ Bank webhook simulation successful:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error simulating bank webhook:', error);
+      throw error;
+    }
+  },
+  
+  // Simulate bank webhook to complete refund
+  simulateRefundWebhook: async (refundId: string): Promise<any> => {
+    try {
+      console.log('🏦 Simulating refund webhook for refund:', refundId);
+      
+      const response = await dashboardApiClient.post(`/v1/refunds/${refundId}/simulate-bank-webhook`);
+      console.log('✅ Refund webhook simulation successful:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error simulating refund webhook:', error);
+      throw error;
+    }
+  },
+
   // Sync payment status (like Hyperswitch sync button)
   syncPaymentStatus: async (paymentId: string) => {
     const response = await dashboardApiClient.post(`/v1/payments/${paymentId}/sync`);

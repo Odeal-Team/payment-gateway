@@ -107,7 +107,36 @@ const RefundDetailPage: React.FC = () => {
     }
   };
 
+  const handleSimulateRefundWebhook = async () => {
+    if (!refund?.refundId) {
+      alert('Refund ID not found for this refund');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      console.log('🏦 Simulating refund webhook for refund:', refund.refundId);
+      
+      // Call the refund webhook simulation API
+      await dashboardAPI.simulateRefundWebhook(refund.refundId);
+      
+      // Show success message
+      alert('✅ Refund completed successfully! Bank webhook simulated.');
+      
+      // Refresh refund details to show updated status
+      loadRefundDetail();
+      
+    } catch (err: any) {
+      console.error('❌ Error simulating refund webhook:', err);
+      alert(`Failed to complete refund: ${err.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
   const formatAmount = (amount: number, currency: string) => {
+    if (currency === 'TRY') {
+      return `₺${amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
@@ -186,13 +215,58 @@ const RefundDetailPage: React.FC = () => {
           </Typography>
         </Box>
         
-        <Button
-          variant="contained"
-          startIcon={<Sync />}
-          onClick={handleSyncRefund}
-        >
-          Sync
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {/* Complete Refund Button - Only show for PROCESSING status */}
+          {refund.status === 'PROCESSING' && (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              p: 2,
+              bgcolor: 'warning.50',
+              borderRadius: 2,
+              border: '2px dashed',
+              borderColor: 'warning.main',
+              minWidth: 200
+            }}>
+              <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600, mb: 1 }}>
+                ⏳ REFUND STUCK
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 1 }}>
+                Status: PROCESSING
+              </Typography>
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={<CheckCircle />}
+                onClick={handleSimulateRefundWebhook}
+                disabled={loading}
+                fullWidth
+                sx={{ 
+                  fontWeight: 'bold',
+                  boxShadow: 2,
+                  '&:hover': {
+                    boxShadow: 4,
+                    transform: 'translateY(-1px)'
+                  }
+                }}
+              >
+                🏦 Complete Now
+              </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                Simulate bank webhook
+              </Typography>
+            </Box>
+          )}
+          
+          <Button
+            variant="contained"
+            startIcon={<Sync />}
+            onClick={handleSyncRefund}
+          >
+            Sync
+          </Button>
+        </Box>
       </Box>
 
       {/* Summary and About Refund */}

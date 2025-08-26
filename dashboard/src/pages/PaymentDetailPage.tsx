@@ -196,6 +196,33 @@ const PaymentDetailPage: React.FC = () => {
     }
   };
 
+  const handleSimulateBankWebhook = async () => {
+    if (!payment?.transactionId) {
+      alert('Transaction ID not found for this payment');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      console.log('🏦 Simulating bank webhook for transaction:', payment.transactionId);
+      
+      // Call the bank webhook simulation API
+      await dashboardAPI.simulateBankWebhook(payment.transactionId);
+      
+      // Show success message
+      alert('✅ Payment completed successfully! Bank webhook simulated.');
+      
+      // Refresh payment details to show updated status
+      loadPaymentDetail();
+      
+    } catch (err: any) {
+      console.error('❌ Error simulating bank webhook:', err);
+      alert(`Failed to complete payment: ${err.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleProcessRefund = () => {
     if (!payment) return;
     
@@ -440,6 +467,18 @@ const PaymentDetailPage: React.FC = () => {
         </Box>
         
         <Box sx={{ display: 'flex', gap: 2 }}>
+          {/* Bank Webhook Simulation Button - Only show for PROCESSING status */}
+          {payment.status === 'PROCESSING' && (
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<CheckCircle />}
+              onClick={handleSimulateBankWebhook}
+              disabled={loading}
+            >
+              Complete Payment
+            </Button>
+          )}
           <Button
             variant="outlined"
             startIcon={<Undo />}

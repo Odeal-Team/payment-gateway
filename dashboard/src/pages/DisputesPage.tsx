@@ -540,7 +540,12 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
       {/* Disputes Table */}
       <Paper>
         {/* Debug Info */}
-        <Box sx={{ p: 2, bgcolor: 'grey.100', borderBottom: 1, borderColor: 'grey.300' }}>
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'grey.100', 
+          borderBottom: 1, 
+          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'grey.300' 
+        }}>
           <Typography variant="body2" color="text.secondary">
             Debug: Merchant: {authState.user?.merchantId} | Disputes count: {disputes.length} | Loading: {loading.toString()} | Error: {error || 'none'}
           </Typography>
