@@ -44,7 +44,7 @@ public class MerchantController {
     /**
      * Merchant ID ile merchant getir
      */
-    @GetMapping("/{merchantId}")
+    @GetMapping("/merchant-id/{merchantId}")
     public ResponseEntity<MerchantResponse> getMerchantByMerchantId(@PathVariable String merchantId) {
         log.info("🔍 Merchant ID ile merchant aranıyor: {}", merchantId);
         return merchantService.getMerchantByMerchantId(merchantId)

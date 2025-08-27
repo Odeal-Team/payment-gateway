@@ -119,7 +119,7 @@ public class RefundController {
     }
     
     // GET - Get refund by refund ID
-    @GetMapping("/{refundId}")
+    @GetMapping("/refund-id/{refundId}")
     public ResponseEntity<RefundResponse> getRefundByRefundId(
             @PathVariable String refundId,
             @RequestHeader(value = "X-API-Key", required = false) String apiKey) {

@@ -69,7 +69,15 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
       console.log('📊 Loading dispute stats for merchant:', merchantId);
       const statsData = await dashboardAPI.getDisputeStats(merchantId);
       console.log('✅ Stats loaded successfully:', statsData);
-      setStats(statsData);
+      
+      // Only use stats API data if it has valid pendingResponses and it's better than our calculated stats
+      if (statsData && typeof statsData.pendingResponses === 'number' && statsData.pendingResponses > 0) {
+        setStats(statsData);
+        console.log('✅ Using stats API data with pendingResponses:', statsData.pendingResponses);
+      } else {
+        console.log('⚠️ Stats API data is invalid or has 0 pending responses, keeping calculated stats');
+      }
+      
       // Clear any previous errors when stats load successfully
       if (error && error.includes('İstatistikler')) {
         setError(null);
@@ -105,6 +113,87 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
       
       setDisputes(disputeData);
       setPagination(paginationData);
+      
+      // Always calculate stats from disputes data to ensure accuracy
+      if (disputeData.length > 0) {
+        const calculatedStats: DisputeStats = {
+          totalDisputes: disputeData.length,
+          pendingResponses: disputeData.filter(d => 
+            d.status === DisputeStatus.AWAITING_MERCHANT_RESPONSE || 
+            d.status === DisputeStatus.MERCHANT_NOTIFIED ||
+            d.status === DisputeStatus.UNDER_REVIEW
+          ).length,
+          activeDisputes: disputeData.filter(d => 
+            d.status === DisputeStatus.OPENED || 
+            d.status === DisputeStatus.UNDER_REVIEW ||
+            d.status === DisputeStatus.EVIDENCE_REQUIRED
+          ).length,
+          wonDisputes: disputeData.filter(d => d.status === DisputeStatus.WON).length,
+          lostDisputes: disputeData.filter(d => d.status === DisputeStatus.LOST).length,
+          winRate: 0, // Will be calculated below
+          totalDisputeAmount: disputeData.reduce((sum, d) => sum + (d.amount || 0), 0),
+          totalDisputeAmountsByCurrency: (() => {
+            const amountsByCurrency = disputeData.reduce((acc, d) => {
+              const currency = d.currency || 'TRY';
+              acc[currency] = (acc[currency] || 0) + (d.amount || 0);
+              return acc;
+            }, {} as Record<string, number>);
+            return amountsByCurrency;
+          })(),
+          urgentDisputes: disputeData.filter(d => {
+            if (d.merchantResponseDeadline) {
+              const deadline = new Date(d.merchantResponseDeadline);
+              const now = new Date();
+              const diffHours = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+              return diffHours < 24; // 24 saatten az kaldıysa acil
+            }
+            return false;
+          }).length,
+          recentDisputes: disputeData.filter(d => {
+            const created = new Date(d.createdAt);
+            const now = new Date();
+            const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+            return diffDays <= 7; // Son 7 günde açılan
+          }).length,
+          reasonBreakdown: {},
+          needsAttention: false
+        };
+        
+        // Calculate win rate
+        const totalResolved = calculatedStats.wonDisputes + calculatedStats.lostDisputes;
+        calculatedStats.winRate = totalResolved > 0 ? 
+          (calculatedStats.wonDisputes / totalResolved) * 100 : 0;
+        
+        // Calculate reason breakdown
+        disputeData.forEach(d => {
+          const reason = d.reason;
+          calculatedStats.reasonBreakdown[reason] = (calculatedStats.reasonBreakdown[reason] || 0) + 1;
+        });
+        
+        // Check if needs attention
+        calculatedStats.needsAttention = calculatedStats.pendingResponses > 0 || calculatedStats.urgentDisputes > 0;
+        
+        setStats(calculatedStats);
+        console.log('📊 Calculated stats from disputes data:', calculatedStats);
+        console.log('🔍 Pending responses count:', calculatedStats.pendingResponses);
+        
+        // Debug: Log dispute statuses for pendingResponses calculation
+        const pendingResponseDisputes = disputeData.filter(d => 
+          d.status === DisputeStatus.AWAITING_MERCHANT_RESPONSE || 
+          d.status === DisputeStatus.MERCHANT_NOTIFIED ||
+          d.status === DisputeStatus.UNDER_REVIEW
+        );
+        console.log('🔍 Disputes requiring merchant response:', pendingResponseDisputes);
+        console.log('🔍 All dispute statuses:', disputeData.map(d => ({ id: d.disputeId, status: d.status })));
+        
+        // Additional debug: Check if there are any disputes with the expected statuses
+        const awaitingResponse = disputeData.filter(d => d.status === DisputeStatus.AWAITING_MERCHANT_RESPONSE);
+        const merchantNotified = disputeData.filter(d => d.status === DisputeStatus.MERCHANT_NOTIFIED);
+        const underReview = disputeData.filter(d => d.status === DisputeStatus.UNDER_REVIEW);
+        console.log('🔍 Disputes with AWAITING_MERCHANT_RESPONSE:', awaitingResponse.length);
+        console.log('🔍 Disputes with MERCHANT_NOTIFIED:', merchantNotified.length);
+        console.log('🔍 Disputes with UNDER_REVIEW:', underReview.length);
+      }
       
       console.log('✅ Disputes loaded successfully');
     } catch (err) {
@@ -360,7 +449,7 @@ const DisputesPage: React.FC<DisputesPageProps> = () => {
                     Toplam Dispute
                   </Typography>
                   <Typography variant="h4" fontWeight="bold">
-                    {stats.totalDisputes}
+                    {disputes.length}
                   </Typography>
                 </Box>
                 <Add color="warning" fontSize="large" />
